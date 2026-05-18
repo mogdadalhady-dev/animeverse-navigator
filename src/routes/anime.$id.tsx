@@ -126,8 +126,8 @@ function AnimePage() {
           <section className="mt-12 mb-12">
             <h2 className="mb-4 font-display text-3xl">You may also like</h2>
             <div className="scrollbar-hide flex gap-4 overflow-x-auto pb-4">
-              {recs.data.data.slice(0, 12).map((r) => (
-                <AnimeCard key={r.entry.mal_id} anime={r.entry} />
+              {recs.data.data.slice(0, 12).map((r, i) => (
+                <AnimeCard key={`${r.entry.mal_id}-${i}`} anime={r.entry} />
               ))}
             </div>
           </section>

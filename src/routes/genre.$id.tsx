@@ -32,8 +32,8 @@ function GenrePage() {
             ? Array.from({ length: 12 }).map((_, i) => (
                 <div key={i} className="aspect-[2/3] animate-pulse rounded-lg bg-surface" />
               ))
-            : items.data?.data?.map((a) => (
-                <div key={a.mal_id} className="w-full">
+            : items.data?.data?.map((a, i) => (
+                <div key={`${a.mal_id}-${i}`} className="w-full">
                   <AnimeCard anime={a} />
                 </div>
               ))}

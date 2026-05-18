@@ -33,8 +33,8 @@ function Section({ title, items }: { title: string; items?: any[] }) {
     <section className="mt-10">
       <h2 className="mb-4 font-display text-2xl">{title}</h2>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-        {items?.map((a) => (
-          <div key={a.mal_id} className="w-full">
+        {items?.map((a, i) => (
+          <div key={`${a.mal_id}-${i}`} className="w-full">
             <AnimeCard anime={a} />
           </div>
         )) ??

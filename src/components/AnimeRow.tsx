@@ -25,8 +25,8 @@ export function AnimeRow({ title, items }: Props) {
         </Link>
       </div>
       <div className="scrollbar-hide flex gap-4 overflow-x-auto px-4 pb-4 md:px-8">
-        {items.map((a) => (
-          <AnimeCard key={a.mal_id} anime={a} />
+        {items.map((a, i) => (
+          <AnimeCard key={`${a.mal_id}-${i}`} anime={a} />
         ))}
       </div>
     </section>

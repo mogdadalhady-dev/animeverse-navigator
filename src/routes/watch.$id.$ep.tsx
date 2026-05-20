@@ -18,8 +18,8 @@ function WatchPage() {
   const epNum = Number(ep) || 1;
   const [provider, setProvider] = useState<Provider>("gogoanime");
   const embeds = buildEmbedSources(id, epNum);
-  // Default to first reliable embed (Vidsrc) — direct m3u8 often blocked by CORS
-  const [mode, setMode] = useState<SourceMode>(embeds[0].name);
+  // Default to our custom HLS player
+  const [mode, setMode] = useState<SourceMode>("direct");
 
   // 1. Anime info from Jikan (MAL)
   const anime = useQuery({ queryKey: ["anime", id], queryFn: () => jikan.byId(id) });

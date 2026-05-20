@@ -18,8 +18,8 @@ function WatchPage() {
   const epNum = Number(ep) || 1;
   const [provider, setProvider] = useState<Provider>("gogoanime");
   const embeds = buildEmbedSources(id, epNum);
-  // Default to first reliable embed (Vidsrc) — direct m3u8 often blocked by CORS
-  const [mode, setMode] = useState<SourceMode>(embeds[0].name);
+  // Default to our custom HLS player
+  const [mode, setMode] = useState<SourceMode>("direct");
 
   // 1. Anime info from Jikan (MAL)
   const anime = useQuery({ queryKey: ["anime", id], queryFn: () => jikan.byId(id) });
@@ -105,9 +105,14 @@ function WatchPage() {
                 </div>
               ) : bestSource?.url ? (
                 <VideoPlayer
-                  src={bestSource.url}
-                  isM3U8={bestSource.isM3U8}
+                  sources={(stream.data?.sources || []).map((s) => ({
+                    url: s.url,
+                    quality: s.quality,
+                    isM3U8: s.isM3U8,
+                  }))}
                   poster={a?.images?.webp?.large_image_url}
+                  title={`${title} — Episode ${epNum}`}
+                  autoPlay
                 />
               ) : directFailed && a?.trailer?.youtube_id ? (
                 <iframe

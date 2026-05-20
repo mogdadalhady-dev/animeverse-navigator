@@ -1,8 +1,18 @@
-// Consumet API client — fetches anime episodes & streaming links
-// Public instance — can be swapped via VITE_CONSUMET_BASE
-const BASE = (import.meta as any).env?.VITE_CONSUMET_BASE || "https://api.consumet.org";
+// Multi-source anime streaming client with automatic fallback.
+// Tries several public Consumet deployments + providers until one returns data.
 
-export type Provider = "gogoanime" | "zoro";
+const EXTRA = (import.meta as any).env?.VITE_CONSUMET_BASE as string | undefined;
+
+// Public Consumet instances (community-hosted). We rotate through them.
+const BASES: string[] = [
+  ...(EXTRA ? [EXTRA] : []),
+  "https://consumet-api-puce.vercel.app",
+  "https://api.consumet.org",
+  "https://consumet-api-h1ga.onrender.com",
+  "https://anime-api-eight.vercel.app",
+];
+
+export type Provider = "gogoanime" | "zoro" | "animepahe" | "9anime";
 
 export interface ConsumetSearchResult {
   id: string;
@@ -40,10 +50,26 @@ export interface StreamResponse {
   headers?: Record<string, string>;
 }
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`);
-  if (!res.ok) throw new Error(`Consumet ${res.status}`);
-  return res.json();
+async function tryFetch<T>(path: string, timeoutMs = 8000): Promise<T> {
+  let lastErr: unknown = null;
+  for (const base of BASES) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), timeoutMs);
+      const res = await fetch(`${base}${path}`, { signal: ctrl.signal });
+      clearTimeout(t);
+      if (!res.ok) {
+        lastErr = new Error(`${base} → ${res.status}`);
+        continue;
+      }
+      const json = (await res.json()) as T;
+      return json;
+    } catch (e) {
+      lastErr = e;
+      continue;
+    }
+  }
+  throw lastErr ?? new Error("All sources failed");
 }
 
 function titleString(t: ConsumetSearchResult["title"]): string {
@@ -53,36 +79,36 @@ function titleString(t: ConsumetSearchResult["title"]): string {
 
 export const consumet = {
   async search(query: string, provider: Provider = "gogoanime") {
-    const data = await get<{ results: ConsumetSearchResult[] }>(
+    const data = await tryFetch<{ results: ConsumetSearchResult[] }>(
       `/anime/${provider}/${encodeURIComponent(query)}`,
     );
     return data.results || [];
   },
 
   async info(id: string, provider: Provider = "gogoanime") {
-    return get<ConsumetInfo>(`/anime/${provider}/info/${encodeURIComponent(id)}`);
+    return tryFetch<ConsumetInfo>(
+      `/anime/${provider}/info/${encodeURIComponent(id)}`,
+    );
   },
 
   async watch(episodeId: string, provider: Provider = "gogoanime", server?: string) {
     const qs = server ? `?server=${server}` : "";
-    return get<StreamResponse>(
+    return tryFetch<StreamResponse>(
       `/anime/${provider}/watch/${encodeURIComponent(episodeId)}${qs}`,
     );
   },
 
   /**
-   * Map a MAL anime to a Consumet anime by searching by title and picking the
-   * best match. This is the standard cross-source mapping pattern.
+   * Find an anime on a given provider by title, picking the best match.
    */
   async findByTitle(
     title: string,
     opts: { provider?: Provider; year?: number | null; totalEpisodes?: number | null } = {},
   ) {
     const provider = opts.provider || "gogoanime";
-    const results = await consumet.search(title, provider);
+    const results = await consumet.search(title, provider).catch(() => []);
     if (!results.length) return null;
 
-    // Score: exact title match > contains > first result
     const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
     const target = norm(title);
     const ranked = results
@@ -92,7 +118,6 @@ export const consumet = {
         if (t === target) score += 100;
         else if (t.startsWith(target) || target.startsWith(t)) score += 50;
         else if (t.includes(target) || target.includes(t)) score += 20;
-        // Prefer sub over dub by default
         if (r.subOrDub === "sub") score += 5;
         return { r, score };
       })
@@ -106,4 +131,41 @@ export function pickTitle(t: ConsumetSearchResult["title"] | ConsumetInfo["title
   if (!t) return "";
   if (typeof t === "string") return t;
   return (t as any).english || (t as any).romaji || (t as any).native || "";
+}
+
+// ---------------------------------------------------------------------------
+// Secondary source: AllAnime via "AnimeAPI" style endpoints (fallback).
+// Uses a public proxy that returns m3u8 links by MAL id.
+// ---------------------------------------------------------------------------
+
+export interface FallbackSource {
+  url: string;
+  quality?: string;
+  isM3U8?: boolean;
+  server?: string;
+}
+
+/**
+ * Vidsrc-style embeds — work as iframe fallbacks when direct m3u8 fails.
+ * These accept MAL id directly, no mapping needed.
+ */
+export function buildEmbedSources(malId: number | string, ep: number) {
+  return [
+    {
+      name: "Vidsrc",
+      url: `https://vidsrc.cc/v2/embed/anime/ani${malId}/${ep}/sub`,
+    },
+    {
+      name: "Vidsrc (Dub)",
+      url: `https://vidsrc.cc/v2/embed/anime/ani${malId}/${ep}/dub`,
+    },
+    {
+      name: "2Anime",
+      url: `https://2anime.xyz/embed/${encodeURIComponent(String(malId))}-episode-${ep}`,
+    },
+    {
+      name: "AnimeOwl",
+      url: `https://animeowl.net/embed/${malId}/${ep}`,
+    },
+  ];
 }

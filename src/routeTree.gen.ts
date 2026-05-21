@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as GenreIdRouteImport } from './routes/genre.$id'
 import { Route as AnimeIdRouteImport } from './routes/anime.$id'
 import { Route as WatchIdEpRouteImport } from './routes/watch.$id.$ep'
+import { Route as ApiAnimeStreamEpisodeIdRouteImport } from './routes/api/anime.stream.$episodeId'
 import { Route as ApiAnimeEpisodesIdRouteImport } from './routes/api/anime.episodes.$id'
 
 const SearchRoute = SearchRouteImport.update({
@@ -53,6 +54,11 @@ const WatchIdEpRoute = WatchIdEpRouteImport.update({
   path: '/watch/$id/$ep',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAnimeStreamEpisodeIdRoute = ApiAnimeStreamEpisodeIdRouteImport.update({
+  id: '/api/anime/stream/$episodeId',
+  path: '/api/anime/stream/$episodeId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAnimeEpisodesIdRoute = ApiAnimeEpisodesIdRouteImport.update({
   id: '/api/anime/episodes/$id',
   path: '/api/anime/episodes/$id',
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/genre/$id': typeof GenreIdRoute
   '/watch/$id/$ep': typeof WatchIdEpRoute
   '/api/anime/episodes/$id': typeof ApiAnimeEpisodesIdRoute
+  '/api/anime/stream/$episodeId': typeof ApiAnimeStreamEpisodeIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/genre/$id': typeof GenreIdRoute
   '/watch/$id/$ep': typeof WatchIdEpRoute
   '/api/anime/episodes/$id': typeof ApiAnimeEpisodesIdRoute
+  '/api/anime/stream/$episodeId': typeof ApiAnimeStreamEpisodeIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/genre/$id': typeof GenreIdRoute
   '/watch/$id/$ep': typeof WatchIdEpRoute
   '/api/anime/episodes/$id': typeof ApiAnimeEpisodesIdRoute
+  '/api/anime/stream/$episodeId': typeof ApiAnimeStreamEpisodeIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/genre/$id'
     | '/watch/$id/$ep'
     | '/api/anime/episodes/$id'
+    | '/api/anime/stream/$episodeId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/genre/$id'
     | '/watch/$id/$ep'
     | '/api/anime/episodes/$id'
+    | '/api/anime/stream/$episodeId'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/genre/$id'
     | '/watch/$id/$ep'
     | '/api/anime/episodes/$id'
+    | '/api/anime/stream/$episodeId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,6 +144,7 @@ export interface RootRouteChildren {
   GenreIdRoute: typeof GenreIdRoute
   WatchIdEpRoute: typeof WatchIdEpRoute
   ApiAnimeEpisodesIdRoute: typeof ApiAnimeEpisodesIdRoute
+  ApiAnimeStreamEpisodeIdRoute: typeof ApiAnimeStreamEpisodeIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -185,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WatchIdEpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/anime/stream/$episodeId': {
+      id: '/api/anime/stream/$episodeId'
+      path: '/api/anime/stream/$episodeId'
+      fullPath: '/api/anime/stream/$episodeId'
+      preLoaderRoute: typeof ApiAnimeStreamEpisodeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/anime/episodes/$id': {
       id: '/api/anime/episodes/$id'
       path: '/api/anime/episodes/$id'
@@ -204,6 +224,7 @@ const rootRouteChildren: RootRouteChildren = {
   GenreIdRoute: GenreIdRoute,
   WatchIdEpRoute: WatchIdEpRoute,
   ApiAnimeEpisodesIdRoute: ApiAnimeEpisodesIdRoute,
+  ApiAnimeStreamEpisodeIdRoute: ApiAnimeStreamEpisodeIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

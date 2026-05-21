@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as GenreIdRouteImport } from './routes/genre.$id'
 import { Route as AnimeIdRouteImport } from './routes/anime.$id'
 import { Route as WatchIdEpRouteImport } from './routes/watch.$id.$ep'
+import { Route as ApiAnimeProxyRouteImport } from './routes/api/anime.proxy'
 import { Route as ApiAnimeStreamEpisodeIdRouteImport } from './routes/api/anime.stream.$episodeId'
 import { Route as ApiAnimeEpisodesIdRouteImport } from './routes/api/anime.episodes.$id'
 
@@ -54,6 +55,11 @@ const WatchIdEpRoute = WatchIdEpRouteImport.update({
   path: '/watch/$id/$ep',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAnimeProxyRoute = ApiAnimeProxyRouteImport.update({
+  id: '/api/anime/proxy',
+  path: '/api/anime/proxy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAnimeStreamEpisodeIdRoute = ApiAnimeStreamEpisodeIdRouteImport.update({
   id: '/api/anime/stream/$episodeId',
   path: '/api/anime/stream/$episodeId',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/anime/$id': typeof AnimeIdRoute
   '/genre/$id': typeof GenreIdRoute
+  '/api/anime/proxy': typeof ApiAnimeProxyRoute
   '/watch/$id/$ep': typeof WatchIdEpRoute
   '/api/anime/episodes/$id': typeof ApiAnimeEpisodesIdRoute
   '/api/anime/stream/$episodeId': typeof ApiAnimeStreamEpisodeIdRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/anime/$id': typeof AnimeIdRoute
   '/genre/$id': typeof GenreIdRoute
+  '/api/anime/proxy': typeof ApiAnimeProxyRoute
   '/watch/$id/$ep': typeof WatchIdEpRoute
   '/api/anime/episodes/$id': typeof ApiAnimeEpisodesIdRoute
   '/api/anime/stream/$episodeId': typeof ApiAnimeStreamEpisodeIdRoute
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/anime/$id': typeof AnimeIdRoute
   '/genre/$id': typeof GenreIdRoute
+  '/api/anime/proxy': typeof ApiAnimeProxyRoute
   '/watch/$id/$ep': typeof WatchIdEpRoute
   '/api/anime/episodes/$id': typeof ApiAnimeEpisodesIdRoute
   '/api/anime/stream/$episodeId': typeof ApiAnimeStreamEpisodeIdRoute
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/anime/$id'
     | '/genre/$id'
+    | '/api/anime/proxy'
     | '/watch/$id/$ep'
     | '/api/anime/episodes/$id'
     | '/api/anime/stream/$episodeId'
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/anime/$id'
     | '/genre/$id'
+    | '/api/anime/proxy'
     | '/watch/$id/$ep'
     | '/api/anime/episodes/$id'
     | '/api/anime/stream/$episodeId'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/anime/$id'
     | '/genre/$id'
+    | '/api/anime/proxy'
     | '/watch/$id/$ep'
     | '/api/anime/episodes/$id'
     | '/api/anime/stream/$episodeId'
@@ -142,6 +154,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   AnimeIdRoute: typeof AnimeIdRoute
   GenreIdRoute: typeof GenreIdRoute
+  ApiAnimeProxyRoute: typeof ApiAnimeProxyRoute
   WatchIdEpRoute: typeof WatchIdEpRoute
   ApiAnimeEpisodesIdRoute: typeof ApiAnimeEpisodesIdRoute
   ApiAnimeStreamEpisodeIdRoute: typeof ApiAnimeStreamEpisodeIdRoute
@@ -198,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WatchIdEpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/anime/proxy': {
+      id: '/api/anime/proxy'
+      path: '/api/anime/proxy'
+      fullPath: '/api/anime/proxy'
+      preLoaderRoute: typeof ApiAnimeProxyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/anime/stream/$episodeId': {
       id: '/api/anime/stream/$episodeId'
       path: '/api/anime/stream/$episodeId'
@@ -222,6 +242,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   AnimeIdRoute: AnimeIdRoute,
   GenreIdRoute: GenreIdRoute,
+  ApiAnimeProxyRoute: ApiAnimeProxyRoute,
   WatchIdEpRoute: WatchIdEpRoute,
   ApiAnimeEpisodesIdRoute: ApiAnimeEpisodesIdRoute,
   ApiAnimeStreamEpisodeIdRoute: ApiAnimeStreamEpisodeIdRoute,

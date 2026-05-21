@@ -146,26 +146,69 @@ export interface FallbackSource {
 }
 
 /**
- * Vidsrc-style embeds — work as iframe fallbacks when direct m3u8 fails.
- * These accept MAL id directly, no mapping needed.
+ * Curated anime embed servers (MAL-id based). Compiled from popular
+ * GitHub aggregators (consumet/anime-api, miruro-official, aniyomi lists).
+ * All accept the MyAnimeList id directly — no provider mapping needed,
+ * which avoids the "server address not found" failures we hit before.
+ *
+ * Each entry has `lang` (sub / dub / multi) and `kind` so the UI can group
+ * them. iframes are sandboxed at render time with permissive flags so they
+ * still play but cannot navigate the parent window.
  */
-export function buildEmbedSources(malId: number | string, ep: number) {
+export type EmbedServer = {
+  name: string;
+  url: string;
+  lang: "sub" | "dub" | "multi";
+};
+
+export function buildEmbedSources(
+  malId: number | string,
+  ep: number,
+): EmbedServer[] {
+  const id = String(malId);
+  const e = ep;
   return [
-    {
-      name: "Vidsrc",
-      url: `https://vidsrc.cc/v2/embed/anime/ani${malId}/${ep}/sub`,
-    },
-    {
-      name: "Vidsrc (Dub)",
-      url: `https://vidsrc.cc/v2/embed/anime/ani${malId}/${ep}/dub`,
-    },
-    {
-      name: "2Anime",
-      url: `https://2anime.xyz/embed/${encodeURIComponent(String(malId))}-episode-${ep}`,
-    },
-    {
-      name: "AnimeOwl",
-      url: `https://animeowl.net/embed/${malId}/${ep}`,
-    },
+    // ---- Vidsrc family (very reliable, multi-quality) ----
+    { name: "Vidsrc",        url: `https://vidsrc.cc/v2/embed/anime/ani${id}/${e}/sub`, lang: "sub" },
+    { name: "Vidsrc Dub",    url: `https://vidsrc.cc/v2/embed/anime/ani${id}/${e}/dub`, lang: "dub" },
+    { name: "Vidsrc Pro",    url: `https://vidsrcpro.com/embed/anime/${id}/${e}/sub`,    lang: "sub" },
+
+    // ---- VidLink (clean, supports auto-next) ----
+    { name: "VidLink",       url: `https://vidlink.pro/anime/${id}/${e}/sub`, lang: "sub" },
+    { name: "VidLink Dub",   url: `https://vidlink.pro/anime/${id}/${e}/dub`, lang: "dub" },
+
+    // ---- MegaPlay (Zoro mirror) ----
+    { name: "MegaPlay",      url: `https://megaplay.buzz/stream/s-2/${id}/${e}/sub`, lang: "sub" },
+    { name: "MegaPlay Dub",  url: `https://megaplay.buzz/stream/s-2/${id}/${e}/dub`, lang: "dub" },
+
+    // ---- 2Embed (large catalog) ----
+    { name: "2Embed",        url: `https://www.2embed.cc/embed/anime/${id}/${e}`, lang: "multi" },
+    { name: "2Embed Org",    url: `https://2embed.org/embed/anime/${id}/${e}`,    lang: "multi" },
+
+    // ---- 2Anime (legacy but widely cached) ----
+    { name: "2Anime",        url: `https://2anime.xyz/embed/${id}-episode-${e}`, lang: "sub" },
+
+    // ---- Anime Pahe / HiAnime style mirrors ----
+    { name: "HiAnime",       url: `https://hianime.to/embed/anime/${id}/${e}`,        lang: "sub" },
+    { name: "AniPlay",       url: `https://aniplaynow.live/embed/anime/${id}/${e}/sub`, lang: "sub" },
+    { name: "AniPlay Dub",   url: `https://aniplaynow.live/embed/anime/${id}/${e}/dub`, lang: "dub" },
+
+    // ---- Moopa / Miruro mirrors ----
+    { name: "Miruro",        url: `https://www.miruro.tv/watch?id=${id}&ep=${e}`,  lang: "sub" },
+    { name: "Moopa",         url: `https://moopa.live/anime/watch/${id}/${e}`,     lang: "sub" },
+
+    // ---- AnimeKai / AnimeOwl / AniWave ----
+    { name: "AnimeKai",      url: `https://animekai.to/embed/${id}/${e}`,   lang: "sub" },
+    { name: "AnimeOwl",      url: `https://animeowl.net/embed/${id}/${e}`,  lang: "sub" },
+    { name: "AniWave",       url: `https://aniwave.se/embed/${id}/${e}`,    lang: "sub" },
+
+    // ---- AllAnime / Yugen / AnimeZ ----
+    { name: "AllAnime",      url: `https://allanime.to/embed/anime/${id}/${e}`,  lang: "multi" },
+    { name: "Yugen",         url: `https://yugenanime.tv/embed/${id}/${e}/`,     lang: "sub" },
+    { name: "AnimeZ",        url: `https://animez.org/embed/${id}/${e}`,         lang: "sub" },
+
+    // ---- AnimeNoSub / EmbTaku (gogo mirror) ----
+    { name: "EmbTaku",       url: `https://embtaku.pro/embed/${id}/${e}`,        lang: "sub" },
+    { name: "AnimeParadise", url: `https://animeparadise.moe/embed/${id}/${e}`,  lang: "sub" },
   ];
 }

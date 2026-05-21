@@ -1,18 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Play, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, Play, AlertCircle, Loader2, RefreshCw } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { jikan } from "@/lib/jikan";
-import { buildEmbedSources } from "@/lib/consumet";
-import { useState } from "react";
+import { buildEmbedSources, type EmbedServer } from "@/lib/consumet";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export const Route = createFileRoute("/watch/$id/$ep")({
   component: WatchPage,
 });
 
 type Provider = "gogoanime" | "zoro";
-type SourceMode = "direct" | string;
+type Mode = "direct" | "embed";
+type Lang = "sub" | "dub" | "multi";
 
 interface EpisodesPayload {
   animeId: string;
@@ -39,15 +40,48 @@ function WatchPage() {
   const { id, ep } = Route.useParams();
   const epNum = Number(ep) || 1;
   const [provider, setProvider] = useState<Provider>("gogoanime");
-  const embeds = buildEmbedSources(id, epNum);
-  const [mode, setMode] = useState<SourceMode>("direct");
+  const [mode, setMode] = useState<Mode>("embed");
+  const [lang, setLang] = useState<Lang>("sub");
 
-  // 1. Anime info from Jikan (poster/title)
+  const allServers = useMemo(() => buildEmbedSources(id, epNum), [id, epNum]);
+  const filtered = useMemo(
+    () => allServers.filter((s) => s.lang === lang || s.lang === "multi"),
+    [allServers, lang],
+  );
+
+  const [serverIdx, setServerIdx] = useState(0);
+  const current: EmbedServer | undefined = filtered[serverIdx];
+
+  // Reset to first server when filter changes / episode changes
+  useEffect(() => {
+    setServerIdx(0);
+  }, [lang, id, epNum]);
+
+  // Iframe load watchdog — auto-advance to next server if the embed
+  // host fails to respond within 10s (covers "server address not found").
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const [iframeLoading, setIframeLoading] = useState(true);
+  useEffect(() => {
+    if (mode !== "embed" || !current) return;
+    setIframeLoading(true);
+    const timer = setTimeout(() => {
+      // If still loading, try next server automatically (once).
+      setIframeLoading((still) => {
+        if (still && serverIdx < filtered.length - 1) {
+          setServerIdx((i) => i + 1);
+        }
+        return still;
+      });
+    }, 12000);
+    return () => clearTimeout(timer);
+  }, [current?.url, mode, serverIdx, filtered.length]);
+
+  // 1. Anime info (Jikan)
   const anime = useQuery({ queryKey: ["anime", id], queryFn: () => jikan.byId(id) });
   const a = anime.data?.data;
   const title = a?.title_english || a?.title || "";
 
-  // 2. Episodes via OUR server proxy (no CORS issues)
+  // 2. Direct (HLS) — only when user picks Direct mode
   const epList = useQuery<EpisodesPayload>({
     enabled: !!title && mode === "direct",
     queryKey: ["api-episodes", id, provider, title],
@@ -57,11 +91,9 @@ function WatchPage() {
       ),
     retry: 1,
   });
-
   const episodes = epList.data?.episodes ?? [];
   const currentEp = episodes.find((e) => e.number === epNum) ?? episodes[epNum - 1];
 
-  // 3. Streaming sources via OUR server proxy
   const stream = useQuery<StreamPayload>({
     enabled: !!currentEp?.id && mode === "direct",
     queryKey: ["api-stream", currentEp?.id, provider],
@@ -71,14 +103,12 @@ function WatchPage() {
       ),
     retry: 1,
   });
-
   const sources = stream.data?.sources ?? [];
   const bestSource =
     sources.find((s) => s.quality === "1080p") ||
     sources.find((s) => s.quality === "720p") ||
     sources[0];
 
-  const currentEmbed = embeds.find((e) => e.name === mode);
   const directLoading = mode === "direct" && (epList.isLoading || stream.isLoading);
   const directFailed =
     mode === "direct" && !directLoading &&
@@ -101,28 +131,38 @@ function WatchPage() {
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
           <div>
             <div className="aspect-video w-full overflow-hidden rounded-xl bg-black">
-              {currentEmbed ? (
-                <iframe
-                  key={currentEmbed.url}
-                  src={currentEmbed.url}
-                  title={currentEmbed.name}
-                  allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-                  allowFullScreen
-                  referrerPolicy="no-referrer"
-                  className="h-full w-full"
-                />
-              ) : directLoading ? (
+              {mode === "embed" && current ? (
+                <div className="relative h-full w-full">
+                  <iframe
+                    ref={iframeRef}
+                    key={current.url}
+                    src={current.url}
+                    title={current.name}
+                    onLoad={() => setIframeLoading(false)}
+                    onError={() => {
+                      if (serverIdx < filtered.length - 1) setServerIdx((i) => i + 1);
+                    }}
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+                    allow="autoplay; encrypted-media; picture-in-picture; fullscreen; accelerometer; gyroscope"
+                    allowFullScreen
+                    referrerPolicy="no-referrer"
+                    className="h-full w-full"
+                  />
+                  {iframeLoading && (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/60 text-muted-foreground">
+                      <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                      <span>Loading {current.name}…</span>
+                    </div>
+                  )}
+                </div>
+              ) : mode === "direct" && directLoading ? (
                 <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                   <Loader2 className="mr-2 h-6 w-6 animate-spin" />
                   <span>Loading stream…</span>
                 </div>
-              ) : bestSource?.url ? (
+              ) : mode === "direct" && bestSource?.url ? (
                 <VideoPlayer
-                  sources={sources.map((s) => ({
-                    url: s.url,
-                    quality: s.quality,
-                    isM3U8: s.isM3U8,
-                  }))}
+                  sources={sources}
                   poster={a?.images?.webp?.large_image_url}
                   title={`${title} — Episode ${epNum}`}
                   autoPlay
@@ -152,37 +192,95 @@ function WatchPage() {
               {currentEp?.title ? ` — ${currentEp.title}` : ""}
             </p>
 
-            <div className="mt-4">
-              <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">Servers</p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setMode("direct")}
-                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                    mode === "direct"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-surface hover:bg-surface-elevated"
-                  }`}
-                >
-                  Direct (HLS)
-                </button>
-                {embeds.map((e) => {
-                  const active = mode === e.name;
-                  return (
-                    <button
-                      key={e.name}
-                      onClick={() => setMode(e.name)}
-                      className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                        active
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-surface hover:bg-surface-elevated"
-                      }`}
-                    >
-                      {e.name}
-                    </button>
-                  );
-                })}
-              </div>
+            {/* Mode + language selector */}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setMode("embed")}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  mode === "embed"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-surface hover:bg-surface-elevated"
+                }`}
+              >
+                Embed Servers ({allServers.length})
+              </button>
+              <button
+                onClick={() => setMode("direct")}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  mode === "direct"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-surface hover:bg-surface-elevated"
+                }`}
+              >
+                Direct (HLS)
+              </button>
+
+              {mode === "embed" && (
+                <>
+                  <div className="ml-2 flex gap-1 rounded-md bg-surface p-1">
+                    {(["sub", "dub"] as Lang[]).map((l) => (
+                      <button
+                        key={l}
+                        onClick={() => setLang(l)}
+                        className={`rounded px-2.5 py-1 text-xs font-semibold uppercase transition-colors ${
+                          lang === l
+                            ? "bg-primary text-primary-foreground"
+                            : "hover:bg-surface-elevated"
+                        }`}
+                      >
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => {
+                      // Force-reload current iframe
+                      if (iframeRef.current) {
+                        const src = iframeRef.current.src;
+                        iframeRef.current.src = "about:blank";
+                        setIframeLoading(true);
+                        setTimeout(() => {
+                          if (iframeRef.current) iframeRef.current.src = src;
+                        }, 50);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1 rounded-md bg-surface px-2.5 py-1 text-xs hover:bg-surface-elevated"
+                  >
+                    <RefreshCw className="h-3 w-3" /> Reload
+                  </button>
+                </>
+              )}
             </div>
+
+            {/* Servers grid */}
+            {mode === "embed" && (
+              <div className="mt-4">
+                <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+                  Servers — {lang.toUpperCase()} ({filtered.length})
+                </p>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                  {filtered.map((s, i) => {
+                    const active = i === serverIdx;
+                    return (
+                      <button
+                        key={s.name}
+                        onClick={() => setServerIdx(i)}
+                        className={`truncate rounded-md px-3 py-2 text-xs font-semibold transition-colors ${
+                          active
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-surface hover:bg-surface-elevated"
+                        }`}
+                      >
+                        {s.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  If a server doesn't load within ~12s it auto-switches to the next one.
+                </p>
+              </div>
+            )}
 
             {mode === "direct" && (
               <div className="mt-4">
@@ -213,7 +311,7 @@ function WatchPage() {
                   </p>
                 ) : epList.isFetched && !epList.isLoading ? (
                   <p className="mt-2 text-xs text-destructive">
-                    No match on this provider. Try another server above.
+                    No match on this provider. Try Embed Servers instead.
                   </p>
                 ) : null}
               </div>

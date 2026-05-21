@@ -4,74 +4,87 @@ import { ArrowLeft, Play, AlertCircle, Loader2 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { jikan } from "@/lib/jikan";
-import { consumet, pickTitle, buildEmbedSources, type Provider } from "@/lib/consumet";
+import { buildEmbedSources } from "@/lib/consumet";
 import { useState } from "react";
 
 export const Route = createFileRoute("/watch/$id/$ep")({
   component: WatchPage,
 });
 
-type SourceMode = "direct" | string; // "direct" = consumet m3u8, else embed name
+type Provider = "gogoanime" | "zoro";
+type SourceMode = "direct" | string;
+
+interface EpisodesPayload {
+  animeId: string;
+  title: string;
+  provider: string;
+  episodes: { id: string; number: number; title?: string }[];
+  totalEpisodes: number;
+  error?: string;
+}
+
+interface StreamPayload {
+  sources: { url: string; quality?: string; isM3U8?: boolean }[];
+  subtitles?: { url: string; lang: string }[];
+  error?: string;
+}
+
+async function jsonFetch<T>(url: string): Promise<T> {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return (await r.json()) as T;
+}
 
 function WatchPage() {
   const { id, ep } = Route.useParams();
   const epNum = Number(ep) || 1;
   const [provider, setProvider] = useState<Provider>("gogoanime");
   const embeds = buildEmbedSources(id, epNum);
-  // Default to our custom HLS player
   const [mode, setMode] = useState<SourceMode>("direct");
 
-  // 1. Anime info from Jikan (MAL)
+  // 1. Anime info from Jikan (poster/title)
   const anime = useQuery({ queryKey: ["anime", id], queryFn: () => jikan.byId(id) });
   const a = anime.data?.data;
   const title = a?.title_english || a?.title || "";
 
-  // 2. Map MAL → Consumet provider by title (only when direct mode is selected)
-  const mapping = useQuery({
+  // 2. Episodes via OUR server proxy (no CORS issues)
+  const epList = useQuery<EpisodesPayload>({
     enabled: !!title && mode === "direct",
-    queryKey: ["consumet-map", title, provider],
+    queryKey: ["api-episodes", id, provider, title],
     queryFn: () =>
-      consumet.findByTitle(title, {
-        provider,
-        year: a?.year ?? null,
-        totalEpisodes: a?.episodes ?? null,
-      }),
+      jsonFetch<EpisodesPayload>(
+        `/api/anime/episodes/${id}?provider=${provider}&title=${encodeURIComponent(title)}`,
+      ),
     retry: 1,
   });
 
-  // 3. Fetch episode list for the matched anime
-  const info = useQuery({
-    enabled: !!mapping.data?.id && mode === "direct",
-    queryKey: ["consumet-info", mapping.data?.id, provider],
-    queryFn: () => consumet.info(mapping.data!.id, provider),
-    retry: 1,
-  });
-
-  const episodes = info.data?.episodes ?? [];
+  const episodes = epList.data?.episodes ?? [];
   const currentEp = episodes.find((e) => e.number === epNum) ?? episodes[epNum - 1];
 
-  // 4. Fetch streaming sources for the episode
-  const stream = useQuery({
+  // 3. Streaming sources via OUR server proxy
+  const stream = useQuery<StreamPayload>({
     enabled: !!currentEp?.id && mode === "direct",
-    queryKey: ["consumet-watch", currentEp?.id, provider],
-    queryFn: () => consumet.watch(currentEp!.id, provider),
+    queryKey: ["api-stream", currentEp?.id, provider],
+    queryFn: () =>
+      jsonFetch<StreamPayload>(
+        `/api/anime/stream/${encodeURIComponent(currentEp!.id)}?provider=${provider}`,
+      ),
     retry: 1,
   });
 
+  const sources = stream.data?.sources ?? [];
   const bestSource =
-    stream.data?.sources?.find((s) => s.quality === "1080p") ||
-    stream.data?.sources?.find((s) => s.quality === "720p") ||
-    stream.data?.sources?.[0];
+    sources.find((s) => s.quality === "1080p") ||
+    sources.find((s) => s.quality === "720p") ||
+    sources[0];
 
   const currentEmbed = embeds.find((e) => e.name === mode);
-  const directLoading = mode === "direct" && (stream.isLoading || mapping.isLoading || info.isLoading);
+  const directLoading = mode === "direct" && (epList.isLoading || stream.isLoading);
   const directFailed =
-    mode === "direct" &&
-    !directLoading &&
-    (!bestSource?.url || mapping.isError || info.isError || stream.isError);
+    mode === "direct" && !directLoading &&
+    (!bestSource?.url || epList.isError || stream.isError);
 
-  const totalFromMap = episodes.length;
-  const totalEpisodes = totalFromMap || a?.episodes || 12;
+  const totalEpisodes = episodes.length || a?.episodes || 12;
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,7 +118,7 @@ function WatchPage() {
                 </div>
               ) : bestSource?.url ? (
                 <VideoPlayer
-                  sources={(stream.data?.sources || []).map((s) => ({
+                  sources={sources.map((s) => ({
                     url: s.url,
                     quality: s.quality,
                     isM3U8: s.isM3U8,
@@ -139,10 +152,19 @@ function WatchPage() {
               {currentEp?.title ? ` — ${currentEp.title}` : ""}
             </p>
 
-            {/* Source switcher: embeds + direct */}
             <div className="mt-4">
               <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">Servers</p>
               <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setMode("direct")}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                    mode === "direct"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-surface hover:bg-surface-elevated"
+                  }`}
+                >
+                  Direct (HLS)
+                </button>
                 {embeds.map((e) => {
                   const active = mode === e.name;
                   return (
@@ -159,20 +181,9 @@ function WatchPage() {
                     </button>
                   );
                 })}
-                <button
-                  onClick={() => setMode("direct")}
-                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                    mode === "direct"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-surface hover:bg-surface-elevated"
-                  }`}
-                >
-                  Direct (HLS)
-                </button>
               </div>
             </div>
 
-            {/* Provider switcher — only relevant in direct mode */}
             {mode === "direct" && (
               <div className="mt-4">
                 <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
@@ -196,11 +207,11 @@ function WatchPage() {
                     );
                   })}
                 </div>
-                {mapping.data ? (
+                {epList.data?.title ? (
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Matched: {pickTitle(mapping.data.title)}
+                    Matched: {epList.data.title}
                   </p>
-                ) : mapping.isFetched && !mapping.isLoading ? (
+                ) : epList.isFetched && !epList.isLoading ? (
                   <p className="mt-2 text-xs text-destructive">
                     No match on this provider. Try another server above.
                   </p>
@@ -211,7 +222,7 @@ function WatchPage() {
 
           <aside className="rounded-xl border border-border bg-surface/50 p-4">
             <h2 className="mb-3 font-display text-xl">
-              Episodes {totalFromMap ? `(${totalFromMap})` : ""}
+              Episodes {episodes.length ? `(${episodes.length})` : ""}
             </h2>
             <div className="grid max-h-[600px] grid-cols-4 gap-2 overflow-y-auto lg:grid-cols-3">
               {Array.from({ length: totalEpisodes }).map((_, i) => {

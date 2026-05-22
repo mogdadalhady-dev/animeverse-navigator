@@ -1,11 +1,13 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Search, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { LanguageToggle, useI18n } from "@/lib/i18n";
 
 export function Navbar() {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,27 +27,29 @@ export function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
-          <NavLink to="/">Home</NavLink>
-          <NavLink to="/browse">Browse</NavLink>
-          <NavLink to="/genres">Genres</NavLink>
+          <NavLink to="/">{t("nav.home")}</NavLink>
+          <NavLink to="/browse">{t("nav.browse")}</NavLink>
+          <NavLink to="/genres">{t("nav.genres")}</NavLink>
         </nav>
 
-        <form onSubmit={onSubmit} className="ml-auto flex-1 max-w-md hidden md:block">
+        <form onSubmit={onSubmit} className="ms-auto flex-1 max-w-md hidden md:block">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search anime..."
-              className="w-full rounded-full border border-border bg-surface py-2 pl-10 pr-4 text-sm outline-none transition-colors focus:border-primary"
+              placeholder={t("nav.search_placeholder")}
+              className="w-full rounded-full border border-border bg-surface py-2 ps-10 pe-4 text-sm outline-none transition-colors focus:border-primary"
             />
           </div>
         </form>
 
+        <LanguageToggle className="hidden md:flex" />
+
         <button
-          className="ml-auto md:hidden"
+          className="ms-auto md:hidden"
           onClick={() => setOpen((v) => !v)}
-          aria-label="Menu"
+          aria-label={t("nav.menu")}
         >
           {open ? <X /> : <Menu />}
         </button>
@@ -55,19 +59,22 @@ export function Navbar() {
         <div className="border-t border-border bg-background px-4 py-4 md:hidden">
           <form onSubmit={onSubmit} className="mb-4">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search anime..."
-                className="w-full rounded-full border border-border bg-surface py-2 pl-10 pr-4 text-sm outline-none focus:border-primary"
+                placeholder={t("nav.search_placeholder")}
+                className="w-full rounded-full border border-border bg-surface py-2 ps-10 pe-4 text-sm outline-none focus:border-primary"
               />
             </div>
           </form>
+          <div className="mb-3 flex justify-end">
+            <LanguageToggle />
+          </div>
           <div className="flex flex-col gap-1" onClick={() => setOpen(false)}>
-            <NavLink to="/">Home</NavLink>
-            <NavLink to="/browse">Browse</NavLink>
-            <NavLink to="/genres">Genres</NavLink>
+            <NavLink to="/">{t("nav.home")}</NavLink>
+            <NavLink to="/browse">{t("nav.browse")}</NavLink>
+            <NavLink to="/genres">{t("nav.genres")}</NavLink>
           </div>
         </div>
       ) : null}

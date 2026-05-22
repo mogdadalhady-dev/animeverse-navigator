@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { Play, Info, Star } from "lucide-react";
 import type { Anime } from "@/lib/jikan";
+import { useI18n } from "@/lib/i18n";
 
 export function Hero({ anime }: { anime: Anime }) {
+  const { t } = useI18n();
   const img =
     anime.images?.webp?.large_image_url ?? anime.images?.jpg?.large_image_url;
   const title = anime.title_english || anime.title;
@@ -24,7 +26,7 @@ export function Hero({ anime }: { anime: Anime }) {
           <div className="max-w-2xl">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
-              Featured Anime
+              {t("hero.featured")}
             </div>
             <h1 className="font-display text-5xl leading-none md:text-7xl">
               {title}
@@ -37,7 +39,7 @@ export function Hero({ anime }: { anime: Anime }) {
                 </span>
               ) : null}
               {anime.year ? <span>{anime.year}</span> : null}
-              {anime.episodes ? <span>{anime.episodes} episodes</span> : null}
+              {anime.episodes ? <span>{anime.episodes} {t("hero.episodes")}</span> : null}
               {anime.rating ? <span>{anime.rating}</span> : null}
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -59,14 +61,14 @@ export function Hero({ anime }: { anime: Anime }) {
                 params={{ id: String(anime.mal_id) }}
                 className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-semibold text-primary-foreground shadow-glow transition-transform hover:scale-105"
               >
-                <Play className="h-5 w-5 fill-current" /> Watch Now
+                <Play className="h-5 w-5 fill-current" /> {t("hero.watch_now")}
               </Link>
               <Link
                 to="/anime/$id"
                 params={{ id: String(anime.mal_id) }}
                 className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/80 px-6 py-3 font-semibold backdrop-blur transition-colors hover:bg-surface-elevated"
               >
-                <Info className="h-5 w-5" /> More Info
+                <Info className="h-5 w-5" /> {t("hero.more_info")}
               </Link>
             </div>
           </div>

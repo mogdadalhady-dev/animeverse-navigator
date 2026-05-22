@@ -5,6 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AnimeCard } from "@/components/AnimeCard";
 import { jikan } from "@/lib/jikan";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/anime/$id")({
   component: AnimePage,
@@ -12,6 +13,7 @@ export const Route = createFileRoute("/anime/$id")({
 
 function AnimePage() {
   const { id } = Route.useParams();
+  const { t } = useI18n();
   const { data, isLoading } = useQuery({
     queryKey: ["anime", id],
     queryFn: () => jikan.byId(id),
@@ -57,7 +59,7 @@ function AnimePage() {
               params={{ id, ep: "1" }}
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3 font-semibold text-primary-foreground shadow-glow transition-transform hover:scale-105"
             >
-              <Play className="h-5 w-5 fill-current" /> Watch Episode 1
+              <Play className="h-5 w-5 fill-current" /> {t("anime.watch_ep1")}
             </Link>
           </div>
 
@@ -76,7 +78,7 @@ function AnimePage() {
                 </span>
               ) : null}
               {a.type ? <Pill icon={<Tv className="h-3.5 w-3.5" />}>{a.type}</Pill> : null}
-              {a.episodes ? <Pill>{a.episodes} eps</Pill> : null}
+              {a.episodes ? <Pill>{a.episodes} {t("anime.eps_short")}</Pill> : null}
               {a.year ? <Pill icon={<Calendar className="h-3.5 w-3.5" />}>{a.year}</Pill> : null}
               {a.duration ? <Pill icon={<Clock className="h-3.5 w-3.5" />}>{a.duration}</Pill> : null}
               {a.status ? <Pill>{a.status}</Pill> : null}
@@ -95,12 +97,12 @@ function AnimePage() {
               ))}
             </div>
 
-            <h2 className="mt-8 mb-2 font-display text-2xl">Synopsis</h2>
-            <p className="leading-relaxed text-muted-foreground">{a.synopsis || "No synopsis available."}</p>
+            <h2 className="mt-8 mb-2 font-display text-2xl">{t("anime.synopsis")}</h2>
+            <p className="leading-relaxed text-muted-foreground">{a.synopsis || t("anime.no_synopsis")}</p>
 
             {a.studios?.length ? (
               <p className="mt-4 text-sm text-muted-foreground">
-                <span className="text-foreground font-semibold">Studio:</span>{" "}
+                <span className="text-foreground font-semibold">{t("anime.studio")}</span>{" "}
                 {a.studios.map((s) => s.name).join(", ")}
               </p>
             ) : null}
@@ -109,7 +111,7 @@ function AnimePage() {
 
         {trailerId ? (
           <section className="mt-12">
-            <h2 className="mb-4 font-display text-3xl">Trailer</h2>
+            <h2 className="mb-4 font-display text-3xl">{t("anime.trailer")}</h2>
             <div className="aspect-video w-full overflow-hidden rounded-xl bg-surface">
               <iframe
                 src={`https://www.youtube.com/embed/${trailerId}`}
@@ -124,7 +126,7 @@ function AnimePage() {
 
         {recs.data?.data?.length ? (
           <section className="mt-12 mb-12">
-            <h2 className="mb-4 font-display text-3xl">You may also like</h2>
+            <h2 className="mb-4 font-display text-3xl">{t("anime.related")}</h2>
             <div className="scrollbar-hide flex gap-4 overflow-x-auto pb-4">
               {recs.data.data.slice(0, 12).map((r, i) => (
                 <AnimeCard key={`${r.entry.mal_id}-${i}`} anime={r.entry} />

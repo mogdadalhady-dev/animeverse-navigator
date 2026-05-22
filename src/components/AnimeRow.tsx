@@ -2,6 +2,7 @@ import { ChevronRight } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { Anime } from "@/lib/jikan";
 import { AnimeCard } from "./AnimeCard";
+import { useI18n } from "@/lib/i18n";
 
 interface Props {
   title: string;
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function AnimeRow({ title, items }: Props) {
+  const { t } = useI18n();
   if (!items?.length) return null;
   return (
     <section className="py-6">
@@ -21,7 +23,7 @@ export function AnimeRow({ title, items }: Props) {
           to="/browse"
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
         >
-          View all <ChevronRight className="h-4 w-4" />
+          {t("row.view_all")} <ChevronRight className="h-4 w-4 rtl:rotate-180" />
         </Link>
       </div>
       <div className="scrollbar-hide flex gap-4 overflow-x-auto px-4 pb-4 md:px-8">

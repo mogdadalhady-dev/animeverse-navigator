@@ -5,6 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AnimeCard } from "@/components/AnimeCard";
 import { jikan } from "@/lib/jikan";
+import { useI18n } from "@/lib/i18n";
 
 const searchSchema = z.object({ q: z.string().optional().default("") });
 
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/search")({
 
 function SearchPage() {
   const { q } = Route.useSearch();
+  const { t } = useI18n();
   const { data, isLoading } = useQuery({
     queryKey: ["search", q],
     queryFn: () => jikan.search(q),
@@ -26,10 +28,10 @@ function SearchPage() {
       <Navbar />
       <div className="mx-auto max-w-[1600px] px-4 py-8 md:px-8">
         <h1 className="font-display text-4xl md:text-5xl">
-          {q ? <>Results for "<span className="text-primary">{q}</span>"</> : "Search anime"}
+          {q ? <>{t("search.results_for")} "<span className="text-primary">{q}</span>"</> : t("search.title")}
         </h1>
         <p className="mt-2 text-muted-foreground">
-          {q ? `${data?.data?.length ?? 0} results` : "Use the search bar above to find your favorite anime."}
+          {q ? `${data?.data?.length ?? 0} ${t("search.count_suffix")}` : t("search.hint")}
         </p>
 
         {isLoading ? (
@@ -37,7 +39,7 @@ function SearchPage() {
         ) : data?.data?.length ? (
           <Grid items={data.data} />
         ) : q ? (
-          <p className="mt-10 text-center text-muted-foreground">No results found.</p>
+          <p className="mt-10 text-center text-muted-foreground">{t("search.none")}</p>
         ) : null}
       </div>
       <Footer />

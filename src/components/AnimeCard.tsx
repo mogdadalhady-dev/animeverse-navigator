@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Star, Play } from "lucide-react";
 import type { Anime } from "@/lib/jikan";
+import { useI18n } from "@/lib/i18n";
 
 interface Props {
   anime: Anime;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export function AnimeCard({ anime, size = "md" }: Props) {
+  const { t } = useI18n();
   const img = anime.images?.webp?.large_image_url ?? anime.images?.jpg?.large_image_url;
   const title = anime.title_english || anime.title;
 
@@ -58,7 +60,7 @@ export function AnimeCard({ anime, size = "md" }: Props) {
         </h3>
         <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
           {anime.type || "TV"}
-          {anime.episodes ? ` • ${anime.episodes} ep` : ""}
+          {anime.episodes ? ` • ${anime.episodes} ${t("card.ep")}` : ""}
           {anime.year ? ` • ${anime.year}` : ""}
         </p>
       </div>

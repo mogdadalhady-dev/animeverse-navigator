@@ -4,6 +4,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AnimeCard } from "@/components/AnimeCard";
 import { jikan } from "@/lib/jikan";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/genre/$id")({
   component: GenrePage,
@@ -11,6 +12,7 @@ export const Route = createFileRoute("/genre/$id")({
 
 function GenrePage() {
   const { id } = Route.useParams();
+  const { t } = useI18n();
   const genres = useQuery({ queryKey: ["genres"], queryFn: () => jikan.genres() });
   const items = useQuery({
     queryKey: ["genre", id],
@@ -24,7 +26,7 @@ function GenrePage() {
       <Navbar />
       <div className="mx-auto max-w-[1600px] px-4 py-8 md:px-8">
         <h1 className="font-display text-4xl md:text-5xl">
-          <span className="text-primary">{name}</span> Anime
+          <span className="text-primary">{name}</span> {t("genre.suffix")}
         </h1>
 
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">

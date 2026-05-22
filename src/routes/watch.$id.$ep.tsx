@@ -6,6 +6,7 @@ import { VideoPlayer } from "@/components/VideoPlayer";
 import { jikan } from "@/lib/jikan";
 import { buildEmbedSources, type EmbedServer } from "@/lib/consumet";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/watch/$id/$ep")({
   component: WatchPage,
@@ -29,6 +30,7 @@ async function jsonFetch<T>(url: string): Promise<T> {
 
 function WatchPage() {
   const { id, ep } = Route.useParams();
+  const { t } = useI18n();
   const epNum = Number(ep) || 1;
   const [mode, setMode] = useState<Mode>("vpa");
   const [lang, setLang] = useState<Lang>("sub");
@@ -110,7 +112,7 @@ function WatchPage() {
           params={{ id }}
           className="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"
         >
-          <ArrowLeft className="h-4 w-4" /> Back to {title || "anime"}
+          <ArrowLeft className="h-4 w-4 rtl:rotate-180" /> {t("watch.back_to")} {title || t("watch.anime")}
         </Link>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
@@ -128,10 +130,10 @@ function WatchPage() {
                 <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
                   <Loader2 className="h-7 w-7 animate-spin" />
                   <span className="text-sm">
-                    Extracting from {current?.name ?? "server"}…
+                    {t("watch.extracting")} {current?.name ?? t("watch.server")}…
                   </span>
                   <span className="text-xs opacity-60">
-                    Trying server {serverIdx + 1} / {filtered.length}
+                    {t("watch.trying_server")} {serverIdx + 1} / {filtered.length}
                   </span>
                 </div>
               ) : mode === "vpa" && vpaFailedAll ? (
@@ -147,16 +149,16 @@ function WatchPage() {
                   <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                     <div className="max-w-md px-4 text-center">
                       <AlertCircle className="mx-auto mb-2 h-10 w-10 opacity-50" />
-                      <p className="font-semibold">No direct stream found</p>
+                      <p className="font-semibold">{t("watch.no_direct")}</p>
                       <p className="mt-1 text-xs">
-                        All {filtered.length} servers were tried. Switch to{" "}
+                        {t("watch.all_tried", { n: filtered.length })}{" "}
                         <button
                           onClick={() => setMode("embed")}
                           className="underline hover:text-primary"
                         >
-                          Embed mode
+                          {t("watch.embed_mode")}
                         </button>{" "}
-                        to try iframe playback.
+                        {t("watch.to_try_iframe")}
                       </p>
                     </div>
                   </div>
@@ -181,8 +183,8 @@ function WatchPage() {
                   />
                   {iframeLoading && (
                     <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/60 text-muted-foreground">
-                      <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                      <span>Loading {current.name}…</span>
+                      <Loader2 className="me-2 h-6 w-6 animate-spin" />
+                      <span>{t("watch.loading")} {current.name}…</span>
                     </div>
                   )}
                 </div>
@@ -190,14 +192,14 @@ function WatchPage() {
                 <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                   <div className="max-w-md px-4 text-center">
                     <AlertCircle className="mx-auto mb-2 h-10 w-10 opacity-50" />
-                    <p className="font-semibold">No server selected</p>
+                    <p className="font-semibold">{t("watch.no_server")}</p>
                   </div>
                 </div>
               )}
             </div>
 
             <h1 className="mt-4 font-display text-3xl md:text-4xl">{title}</h1>
-            <p className="mt-1 text-lg text-muted-foreground">Episode {epNum}</p>
+            <p className="mt-1 text-lg text-muted-foreground">{t("watch.episode")} {epNum}</p>
 
             {/* Mode + language selector */}
             <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -212,7 +214,7 @@ function WatchPage() {
                     : "bg-surface hover:bg-surface-elevated"
                 }`}
               >
-                ⚡ Direct Stream (VPA)
+                {t("watch.direct")}
               </button>
               <button
                 onClick={() => {
@@ -225,7 +227,7 @@ function WatchPage() {
                     : "bg-surface hover:bg-surface-elevated"
                 }`}
               >
-                Embed iframe
+                {t("watch.embed")}
               </button>
 
               <div className="ml-2 flex gap-1 rounded-md bg-surface p-1">
@@ -259,17 +261,17 @@ function WatchPage() {
                 }}
                 className="inline-flex items-center gap-1 rounded-md bg-surface px-2.5 py-1 text-xs hover:bg-surface-elevated"
               >
-                <RefreshCw className="h-3 w-3" /> Reload
+                <RefreshCw className="h-3 w-3" /> {t("watch.reload")}
               </button>
             </div>
 
             {/* Servers grid */}
             <div className="mt-4">
               <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-                Servers — {lang.toUpperCase()} ({filtered.length})
+                {t("watch.servers")} — {lang.toUpperCase()} ({filtered.length})
                 {mode === "vpa" && vpaSource?.url ? (
-                  <span className="ml-2 normal-case text-emerald-400">
-                    ● streaming via proxy
+                  <span className="ms-2 normal-case text-emerald-400">
+                    {t("watch.streaming_via_proxy")}
                   </span>
                 ) : null}
               </p>
@@ -292,15 +294,13 @@ function WatchPage() {
                 })}
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
-                {mode === "vpa"
-                  ? "VPA extracts the direct .m3u8 server-side and streams it through our proxy — no iframe blocks. Auto-switches if a server can't be extracted."
-                  : "If a server doesn't load within ~12s it auto-switches to the next one."}
+                {mode === "vpa" ? t("watch.vpa_hint") : t("watch.embed_hint")}
               </p>
             </div>
           </div>
 
           <aside className="rounded-xl border border-border bg-surface/50 p-4">
-            <h2 className="mb-3 font-display text-xl">Episodes</h2>
+            <h2 className="mb-3 font-display text-xl">{t("watch.episodes_title")}</h2>
             <div className="grid max-h-[600px] grid-cols-4 gap-2 overflow-y-auto lg:grid-cols-3">
               {Array.from({ length: totalEpisodes }).map((_, i) => {
                 const n = i + 1;

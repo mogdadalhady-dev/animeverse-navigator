@@ -4,12 +4,14 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AnimeCard } from "@/components/AnimeCard";
 import { jikan } from "@/lib/jikan";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/browse")({
   component: BrowsePage,
 });
 
 function BrowsePage() {
+  const { t } = useI18n();
   const top = useQuery({ queryKey: ["browse-top"], queryFn: () => jikan.top(24) });
   const popular = useQuery({ queryKey: ["browse-popular"], queryFn: () => jikan.popular(24) });
 
@@ -17,11 +19,11 @@ function BrowsePage() {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="mx-auto max-w-[1600px] px-4 py-8 md:px-8">
-        <h1 className="font-display text-4xl md:text-5xl">Browse Anime</h1>
-        <p className="mt-2 text-muted-foreground">Explore top-rated and most popular series.</p>
+        <h1 className="font-display text-4xl md:text-5xl">{t("browse.title")}</h1>
+        <p className="mt-2 text-muted-foreground">{t("browse.subtitle")}</p>
 
-        <Section title="Top Rated" items={top.data?.data} />
-        <Section title="Most Popular" items={popular.data?.data} />
+        <Section title={t("browse.top")} items={top.data?.data} />
+        <Section title={t("browse.popular")} items={popular.data?.data} />
       </div>
       <Footer />
     </div>

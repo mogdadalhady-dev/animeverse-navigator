@@ -5,12 +5,14 @@ import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
 import { AnimeRow } from "@/components/AnimeRow";
 import { jikan } from "@/lib/jikan";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
 function Index() {
+  const { t } = useI18n();
   const trending = useQuery({ queryKey: ["trending"], queryFn: () => jikan.trending(24) });
   const top = useQuery({ queryKey: ["top"], queryFn: () => jikan.top(24) });
   const season = useQuery({ queryKey: ["season"], queryFn: () => jikan.seasonNow(24) });
@@ -27,10 +29,10 @@ function Index() {
         ) : (
           <div className="h-[60vh] animate-pulse bg-surface" />
         )}
-        <AnimeRow title="Trending Now" items={trending.data?.data ?? []} />
-        <AnimeRow title="This Season" items={season.data?.data ?? []} />
-        <AnimeRow title="Top Rated" items={top.data?.data ?? []} />
-        <AnimeRow title="Upcoming" items={upcoming.data?.data ?? []} />
+        <AnimeRow title={t("row.trending")} items={trending.data?.data ?? []} />
+        <AnimeRow title={t("row.season")} items={season.data?.data ?? []} />
+        <AnimeRow title={t("row.top")} items={top.data?.data ?? []} />
+        <AnimeRow title={t("row.upcoming")} items={upcoming.data?.data ?? []} />
       </main>
       <Footer />
     </div>

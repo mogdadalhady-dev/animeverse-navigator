@@ -3,20 +3,22 @@ import { useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { jikan } from "@/lib/jikan";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/genres")({
   component: GenresPage,
 });
 
 function GenresPage() {
+  const { t } = useI18n();
   const { data, isLoading } = useQuery({ queryKey: ["genres"], queryFn: () => jikan.genres() });
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="mx-auto max-w-[1400px] px-4 py-8 md:px-8">
-        <h1 className="font-display text-4xl md:text-5xl">Genres</h1>
-        <p className="mt-2 text-muted-foreground">Pick a genre to explore.</p>
+        <h1 className="font-display text-4xl md:text-5xl">{t("genres.title")}</h1>
+        <p className="mt-2 text-muted-foreground">{t("genres.subtitle")}</p>
 
         {isLoading ? (
           <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">

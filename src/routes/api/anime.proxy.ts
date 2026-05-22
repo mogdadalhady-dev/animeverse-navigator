@@ -52,6 +52,23 @@ export const Route = createFileRoute("/api/anime/proxy")({
       OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
       GET: async ({ request }) => {
         const url = new URL(request.url);
+
+        // Same-origin protection: only allow our own site to use the proxy.
+        const reqOrigin = request.headers.get("origin");
+        const reqRef = request.headers.get("referer");
+        const allowedHost = url.host;
+        const hostOf = (s: string | null) => {
+          if (!s) return null;
+          try { return new URL(s).host; } catch { return null; }
+        };
+        const oh = hostOf(reqOrigin);
+        const rh = hostOf(reqRef);
+        const sameOrigin =
+          (!reqOrigin && !reqRef) || oh === allowedHost || rh === allowedHost;
+        if (!sameOrigin) {
+          return new Response("Forbidden", { status: 403, headers: CORS });
+        }
+
         const target = url.searchParams.get("url");
         const ref = url.searchParams.get("ref") || undefined;
         const origin = url.searchParams.get("origin") || undefined;

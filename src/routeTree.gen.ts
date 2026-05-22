@@ -17,6 +17,7 @@ import { Route as GenreIdRouteImport } from './routes/genre.$id'
 import { Route as AnimeIdRouteImport } from './routes/anime.$id'
 import { Route as WatchIdEpRouteImport } from './routes/watch.$id.$ep'
 import { Route as ApiAnimeProxyRouteImport } from './routes/api/anime.proxy'
+import { Route as ApiAnimeExtractRouteImport } from './routes/api/anime.extract'
 import { Route as ApiAnimeStreamEpisodeIdRouteImport } from './routes/api/anime.stream.$episodeId'
 import { Route as ApiAnimeEpisodesIdRouteImport } from './routes/api/anime.episodes.$id'
 
@@ -60,6 +61,11 @@ const ApiAnimeProxyRoute = ApiAnimeProxyRouteImport.update({
   path: '/api/anime/proxy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAnimeExtractRoute = ApiAnimeExtractRouteImport.update({
+  id: '/api/anime/extract',
+  path: '/api/anime/extract',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAnimeStreamEpisodeIdRoute = ApiAnimeStreamEpisodeIdRouteImport.update({
   id: '/api/anime/stream/$episodeId',
   path: '/api/anime/stream/$episodeId',
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/search': typeof SearchRoute
   '/anime/$id': typeof AnimeIdRoute
   '/genre/$id': typeof GenreIdRoute
+  '/api/anime/extract': typeof ApiAnimeExtractRoute
   '/api/anime/proxy': typeof ApiAnimeProxyRoute
   '/watch/$id/$ep': typeof WatchIdEpRoute
   '/api/anime/episodes/$id': typeof ApiAnimeEpisodesIdRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute
   '/anime/$id': typeof AnimeIdRoute
   '/genre/$id': typeof GenreIdRoute
+  '/api/anime/extract': typeof ApiAnimeExtractRoute
   '/api/anime/proxy': typeof ApiAnimeProxyRoute
   '/watch/$id/$ep': typeof WatchIdEpRoute
   '/api/anime/episodes/$id': typeof ApiAnimeEpisodesIdRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/search': typeof SearchRoute
   '/anime/$id': typeof AnimeIdRoute
   '/genre/$id': typeof GenreIdRoute
+  '/api/anime/extract': typeof ApiAnimeExtractRoute
   '/api/anime/proxy': typeof ApiAnimeProxyRoute
   '/watch/$id/$ep': typeof WatchIdEpRoute
   '/api/anime/episodes/$id': typeof ApiAnimeEpisodesIdRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/anime/$id'
     | '/genre/$id'
+    | '/api/anime/extract'
     | '/api/anime/proxy'
     | '/watch/$id/$ep'
     | '/api/anime/episodes/$id'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/anime/$id'
     | '/genre/$id'
+    | '/api/anime/extract'
     | '/api/anime/proxy'
     | '/watch/$id/$ep'
     | '/api/anime/episodes/$id'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/anime/$id'
     | '/genre/$id'
+    | '/api/anime/extract'
     | '/api/anime/proxy'
     | '/watch/$id/$ep'
     | '/api/anime/episodes/$id'
@@ -154,6 +166,7 @@ export interface RootRouteChildren {
   SearchRoute: typeof SearchRoute
   AnimeIdRoute: typeof AnimeIdRoute
   GenreIdRoute: typeof GenreIdRoute
+  ApiAnimeExtractRoute: typeof ApiAnimeExtractRoute
   ApiAnimeProxyRoute: typeof ApiAnimeProxyRoute
   WatchIdEpRoute: typeof WatchIdEpRoute
   ApiAnimeEpisodesIdRoute: typeof ApiAnimeEpisodesIdRoute
@@ -218,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAnimeProxyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/anime/extract': {
+      id: '/api/anime/extract'
+      path: '/api/anime/extract'
+      fullPath: '/api/anime/extract'
+      preLoaderRoute: typeof ApiAnimeExtractRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/anime/stream/$episodeId': {
       id: '/api/anime/stream/$episodeId'
       path: '/api/anime/stream/$episodeId'
@@ -242,6 +262,7 @@ const rootRouteChildren: RootRouteChildren = {
   SearchRoute: SearchRoute,
   AnimeIdRoute: AnimeIdRoute,
   GenreIdRoute: GenreIdRoute,
+  ApiAnimeExtractRoute: ApiAnimeExtractRoute,
   ApiAnimeProxyRoute: ApiAnimeProxyRoute,
   WatchIdEpRoute: WatchIdEpRoute,
   ApiAnimeEpisodesIdRoute: ApiAnimeEpisodesIdRoute,

@@ -193,8 +193,16 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
 export function useI18n() {
   const ctx = useContext(I18nContext);
-  if (!ctx) throw new Error("useI18n must be used inside I18nProvider");
-  return ctx;
+  if (ctx) return ctx;
+  // Fallback when used outside the provider (e.g. router boundaries)
+  const lang: Lang =
+    (typeof window !== "undefined" && (localStorage.getItem("lang") as Lang)) || "en";
+  const t = (k: Key, vars?: Record<string, string | number>) => {
+    let s: string = (dict[lang] as Record<string, string>)[k] ?? (dict.en as Record<string, string>)[k] ?? k;
+    if (vars) for (const [key, val] of Object.entries(vars)) s = s.replace(`{${key}}`, String(val));
+    return s;
+  };
+  return { lang, setLang: () => {}, t, dir: lang === "ar" ? "rtl" : "ltr" } as Ctx;
 }
 
 export function LanguageToggle({ className = "" }: { className?: string }) {

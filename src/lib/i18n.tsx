@@ -67,6 +67,9 @@ const dict = {
     "watch.streaming_via_proxy": "● streaming via proxy",
     "watch.vpa_hint": "VPA extracts the direct .m3u8 server-side and streams it through our proxy — no iframe blocks. Auto-switches if a server can't be extracted.",
     "watch.embed_hint": "If a server doesn't load within ~12s it auto-switches to the next one.",
+    "watch.checking": "Checking servers…",
+    "watch.available": "available",
+    "watch.none_have_episode": "No server has this episode available. Try switching language or Embed mode.",
     // Footer
     "footer.tagline": "Stream your favorite anime. Powered by MyAnimeList (Jikan API).",
     "footer.copy": "Demo project.",

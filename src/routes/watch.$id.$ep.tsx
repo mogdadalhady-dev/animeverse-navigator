@@ -294,32 +294,52 @@ function WatchPage() {
 
             {/* Servers grid */}
             <div className="mt-4">
-              <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-                {t("watch.servers")} — {lang.toUpperCase()} ({filtered.length})
-                {mode === "vpa" && vpaSource?.url ? (
-                  <span className="ms-2 normal-case text-emerald-400">
-                    {t("watch.streaming_via_proxy")}
+              <p className="mb-2 flex flex-wrap items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                <span>
+                  {t("watch.servers")} — {lang.toUpperCase()} ({filtered.length}
+                  {mode === "vpa" ? ` / ${langFiltered.length}` : ""})
+                </span>
+                {mode === "vpa" && probing ? (
+                  <span className="inline-flex items-center gap-1 normal-case text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    {t("watch.checking") ?? "Checking servers…"}
+                  </span>
+                ) : null}
+                {mode === "vpa" && !probing && available.length > 0 ? (
+                  <span className="inline-flex items-center gap-1 normal-case text-emerald-400">
+                    <CheckCircle2 className="h-3 w-3" />
+                    {available.length} {t("watch.available") ?? "available"}
                   </span>
                 ) : null}
               </p>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                {filtered.map((s, i) => {
-                  const active = i === serverIdx;
-                  return (
-                    <button
-                      key={s.name}
-                      onClick={() => setServerIdx(i)}
-                      className={`truncate rounded-md px-3 py-2 text-xs font-semibold transition-colors ${
-                        active
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-surface hover:bg-surface-elevated"
-                      }`}
-                    >
-                      {s.name}
-                    </button>
-                  );
-                })}
-              </div>
+              {mode === "vpa" && !probing && filtered.length === 0 ? (
+                <p className="rounded-md border border-border bg-surface/40 p-3 text-xs text-muted-foreground">
+                  {t("watch.none_have_episode") ??
+                    "No server has this episode available. Try switching language or Embed mode."}
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+                  {filtered.map((s, i) => {
+                    const active = i === serverIdx;
+                    return (
+                      <button
+                        key={s.name}
+                        onClick={() => setServerIdx(i)}
+                        className={`inline-flex items-center justify-center gap-1 truncate rounded-md px-3 py-2 text-xs font-semibold transition-colors ${
+                          active
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-surface hover:bg-surface-elevated"
+                        }`}
+                      >
+                        {mode === "vpa" ? (
+                          <CheckCircle2 className="h-3 w-3 shrink-0 opacity-80" />
+                        ) : null}
+                        <span className="truncate">{s.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
               <p className="mt-2 text-xs text-muted-foreground">
                 {mode === "vpa" ? t("watch.vpa_hint") : t("watch.embed_hint")}
               </p>

@@ -10,6 +10,28 @@ import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/watch/$id/$ep")({
   component: WatchPage,
+  errorComponent: ({ error, reset }) => (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="max-w-md text-center">
+        <h1 className="text-xl font-semibold text-foreground">Error</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+        <button
+          onClick={reset}
+          className="mt-4 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+        >
+          Try again
+        </button>
+      </div>
+    </div>
+  ),
+  notFoundComponent: () => (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="max-w-md text-center">
+        <h1 className="text-xl font-semibold text-foreground">Not Found</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Episode not found.</p>
+      </div>
+    </div>
+  ),
 });
 
 type Mode = "vpa" | "embed";

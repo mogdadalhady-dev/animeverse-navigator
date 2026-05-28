@@ -36,18 +36,47 @@ function WatchPage() {
   const [lang, setLang] = useState<Lang>("sub");
 
   const allServers = useMemo(() => buildEmbedSources(id, epNum), [id, epNum]);
-  const filtered = useMemo(
+  const langFiltered = useMemo(
     () => allServers.filter((s) => s.lang === lang || s.lang === "multi"),
     [allServers, lang],
   );
 
+  // Probe every candidate server in parallel via /api/anime/extract.
+  // Keep only the ones that actually return a usable stream.
+  const probes = useQueries({
+    queries: langFiltered.map((s) => ({
+      queryKey: ["extract", s.url],
+      queryFn: () =>
+        jsonFetch<ExtractPayload>(
+          `/api/anime/extract?url=${encodeURIComponent(s.url)}`,
+        ),
+      retry: 0,
+      staleTime: 5 * 60_000,
+    })),
+  });
+
+  const probing = probes.some((p) => p.isLoading);
+  const available = useMemo(
+    () =>
+      langFiltered
+        .map((s, i) => ({ s, probe: probes[i] }))
+        .filter(({ probe }) => probe.data?.found && !!probe.data.source?.url),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [langFiltered, probes.map((p) => p.dataUpdatedAt).join("|")],
+  );
+
+  // In VPA mode we restrict to verified servers. In embed mode, fall back to
+  // the full lang-filtered list (iframe playback can't be probed reliably).
+  const filtered: EmbedServer[] =
+    mode === "vpa" ? available.map((a) => a.s) : langFiltered;
+
   const [serverIdx, setServerIdx] = useState(0);
   const current: EmbedServer | undefined = filtered[serverIdx];
 
-  // Reset on episode / lang change
+  // Reset when episode / lang / mode / available-set changes
   useEffect(() => {
     setServerIdx(0);
-  }, [lang, id, epNum]);
+  }, [lang, id, epNum, mode, filtered.length]);
 
   // 1. Anime info
   const anime = useQuery({ queryKey: ["anime", id], queryFn: () => jikan.byId(id) });

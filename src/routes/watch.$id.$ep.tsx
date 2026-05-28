@@ -128,9 +128,10 @@ function WatchPage() {
 
   const vpaSource = extract.data?.found ? extract.data.source : undefined;
   const vpaLoading =
-    mode === "vpa" && (probing || extract.isLoading) && !vpaSource;
+    mode === "vpa" && (!hydrated || probing || extract.isLoading) && !vpaSource;
   const vpaFailedAll =
-    mode === "vpa" && !probing && available.length === 0;
+    mode === "vpa" && hydrated && !probing && available.length === 0;
+
 
   const totalEpisodes = a?.episodes || 12;
 

@@ -123,12 +123,10 @@ function WatchPage() {
   }, [current?.url, mode, serverIdx, filtered.length]);
 
   const vpaSource = extract.data?.found ? extract.data.source : undefined;
-  const vpaLoading = mode === "vpa" && extract.isLoading;
+  const vpaLoading =
+    mode === "vpa" && (probing || extract.isLoading) && !vpaSource;
   const vpaFailedAll =
-    mode === "vpa" &&
-    !vpaLoading &&
-    !vpaSource &&
-    serverIdx >= filtered.length - 1;
+    mode === "vpa" && !probing && available.length === 0;
 
   const totalEpisodes = a?.episodes || 12;
 

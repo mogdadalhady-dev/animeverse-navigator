@@ -42,8 +42,9 @@ function WatchPage() {
   );
 
   // Probe every candidate server in parallel via /api/anime/extract.
-  // Client-only — relative URLs don't resolve during SSR.
-  const isClient = typeof window !== "undefined";
+  // Client-only — and gated behind hydration to prevent SSR/CSR mismatch.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
   const probes = useQueries({
     queries: langFiltered.map((s) => ({
       queryKey: ["extract", s.url],
@@ -51,11 +52,12 @@ function WatchPage() {
         jsonFetch<ExtractPayload>(
           `/api/anime/extract?url=${encodeURIComponent(s.url)}`,
         ),
-      enabled: isClient,
+      enabled: hydrated,
       retry: 0,
       staleTime: 5 * 60_000,
     })),
   });
+
 
   const probing = probes.some((p) => p.isLoading);
   const available = useMemo(
@@ -88,7 +90,7 @@ function WatchPage() {
   // 2. VPA: extract direct stream URL from current embed page (server-side
   //    scraper → returns a URL already proxied through /api/anime/proxy).
   const extract = useQuery<ExtractPayload>({
-    enabled: isClient && mode === "vpa" && !!current?.url,
+    enabled: hydrated && mode === "vpa" && !!current?.url,
     queryKey: ["extract", current?.url],
     queryFn: () =>
       jsonFetch<ExtractPayload>(
@@ -126,9 +128,10 @@ function WatchPage() {
 
   const vpaSource = extract.data?.found ? extract.data.source : undefined;
   const vpaLoading =
-    mode === "vpa" && (probing || extract.isLoading) && !vpaSource;
+    mode === "vpa" && (!hydrated || probing || extract.isLoading) && !vpaSource;
   const vpaFailedAll =
-    mode === "vpa" && !probing && available.length === 0;
+    mode === "vpa" && hydrated && !probing && available.length === 0;
+
 
   const totalEpisodes = a?.episodes || 12;
 

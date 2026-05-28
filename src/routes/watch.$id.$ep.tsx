@@ -42,7 +42,8 @@ function WatchPage() {
   );
 
   // Probe every candidate server in parallel via /api/anime/extract.
-  // Keep only the ones that actually return a usable stream.
+  // Client-only — relative URLs don't resolve during SSR.
+  const isClient = typeof window !== "undefined";
   const probes = useQueries({
     queries: langFiltered.map((s) => ({
       queryKey: ["extract", s.url],
@@ -50,6 +51,7 @@ function WatchPage() {
         jsonFetch<ExtractPayload>(
           `/api/anime/extract?url=${encodeURIComponent(s.url)}`,
         ),
+      enabled: isClient,
       retry: 0,
       staleTime: 5 * 60_000,
     })),

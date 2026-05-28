@@ -42,8 +42,9 @@ function WatchPage() {
   );
 
   // Probe every candidate server in parallel via /api/anime/extract.
-  // Client-only — relative URLs don't resolve during SSR.
-  const isClient = typeof window !== "undefined";
+  // Client-only — and gated behind hydration to prevent SSR/CSR mismatch.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
   const probes = useQueries({
     queries: langFiltered.map((s) => ({
       queryKey: ["extract", s.url],
@@ -51,11 +52,12 @@ function WatchPage() {
         jsonFetch<ExtractPayload>(
           `/api/anime/extract?url=${encodeURIComponent(s.url)}`,
         ),
-      enabled: isClient,
+      enabled: hydrated,
       retry: 0,
       staleTime: 5 * 60_000,
     })),
   });
+
 
   const probing = probes.some((p) => p.isLoading);
   const available = useMemo(

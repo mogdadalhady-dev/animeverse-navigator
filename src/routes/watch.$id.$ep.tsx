@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Play, AlertCircle, Loader2, RefreshCw } from "lucide-react";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Play, AlertCircle, Loader2, RefreshCw, CheckCircle2 } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { jikan } from "@/lib/jikan";

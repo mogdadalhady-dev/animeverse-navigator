@@ -88,7 +88,7 @@ function WatchPage() {
   // 2. VPA: extract direct stream URL from current embed page (server-side
   //    scraper → returns a URL already proxied through /api/anime/proxy).
   const extract = useQuery<ExtractPayload>({
-    enabled: mode === "vpa" && !!current?.url,
+    enabled: isClient && mode === "vpa" && !!current?.url,
     queryKey: ["extract", current?.url],
     queryFn: () =>
       jsonFetch<ExtractPayload>(
